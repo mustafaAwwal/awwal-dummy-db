@@ -1,0 +1,12 @@
+{
+  "compilerOptions": {
+    "baseUrl": ".",
+    "outDir": "./dist",
+    "lib": ["ES6"],
+    "module": "ESNext",
+    "moduleResolution": "Node",
+    "target": "ES5",
+    "esModuleInterop": true
+  },
+  "exclude": ["*.test.tsx"]
+}
