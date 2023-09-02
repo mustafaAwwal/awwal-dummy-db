@@ -1,8 +1,7 @@
 {
-  "name": "dummy-db",
+  "name": "@awwal/dummy-db",
   "version": "1.0.0",
   "description": "",
-  "main": "index.ts",
   "type": "module",
   "scripts": {
     "test": "jest",
