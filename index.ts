@@ -19,15 +19,16 @@ export type DummyValueTypes =
   | "country"
   | "age"
   | "description"
+  | "email"
   | "auto-increment-id";
 
 export type Schema<T extends Record<string, unknown>> = {
   [property in keyof T]: T[property] extends Record<string, unknown>
-    ? Schema<T[property]>
+    ? Schema<T[property]> | (() => any)
     : T[property] extends (infer E)[]
     ? E extends Record<string, unknown>
-      ? [Schema<E>]
-      : [DummyValueTypes]
+      ? [Schema<E> | (() => any)]
+      : [DummyValueTypes | (() => any)]
     : DummyValueTypes | (() => any);
 };
 
@@ -37,10 +38,23 @@ export type Conditions<T extends Record<string, unknown>> = {
     : T[property];
 };
 
-export const autoIncrementName =
-  (name: string, separator = " ", start = 1) =>
-  () =>
-    `${name}${separator}${start++}`;
+export const autoIncrementName = (name: string, separator = " ", start = 1) => {
+  let localStart = start;
+  return () => `${name}${separator}${localStart++}`;
+};
+
+export const oneOf = <T>(values: T[], startFrom = 0) => {
+  let localStartFrom = startFrom;
+  return () => values[localStartFrom++ % values.length];
+};
+
+export const autoIncrementId = (
+  type: "number" | "string" = "number",
+  start = 1
+) => {
+  let localStart = start;
+  return () => (type === "number" ? localStart++ : `${localStart++}`);
+};
 
 export const createValue: Record<DummyValueTypes, () => any> = {
   name: () =>
@@ -57,28 +71,31 @@ export const createValue: Record<DummyValueTypes, () => any> = {
   country: () => uniqueNamesGenerator({ dictionaries: [countries] }),
   boolean: () => Math.random() > 0.5,
   description: () => loremIpsum(),
-  "auto-increment-id": (
-    (start = 1) =>
-    () =>
-      start++
-  )(),
+  email: () =>
+    uniqueNamesGenerator({
+      dictionaries: [names, ["@"], ["google.com"]],
+      separator: "",
+    }),
+  "auto-increment-id": autoIncrementId(),
 };
 
 export const createDummyRecursive = <J extends Record<string, unknown>>(
   schema: Schema<J>
-) => {
-  const entry = {};
+): J => {
+  const entry = {} as Record<string, unknown>;
 
   Object.entries(schema).forEach(([key, value]) => {
-    if (typeof value === "string") entry[key] = createValue[value]();
-    if (typeof value === "function") entry[key] = value?.();
-    if (typeof value === "object") entry[key] = createDummyRecursive(value);
-    if (Array.isArray(value))
-      entry[key] = [
-        typeof value[0] === "object"
-          ? createDummyRecursive(value[0])
-          : createValue[value[0]](),
-      ];
+    if (typeof value === "string")
+      entry[key] = createValue[value as DummyValueTypes]();
+    else if (typeof value === "function") entry[key] = value?.();
+    else if (Array.isArray(value)) {
+      if (typeof value[0] === "function") entry[key] = [value[0]()];
+      if (typeof value[0] === "string")
+        entry[key] = [createValue[value[0] as DummyValueTypes]()];
+      if (typeof value[0] === "object")
+        entry[key] = [createDummyRecursive(value[0])];
+    } else if (typeof value === "object")
+      entry[key] = createDummyRecursive(value);
   });
 
   return entry as J;
@@ -96,6 +113,8 @@ export const createTable = <T extends Record<string, unknown>>(
 
   const getAll = () => tableData;
 
+  const getFirst = () => tableData[0];
+
   const add = (entry: T) => tableData.push(entry);
 
   const remove = (conditions: Conditions<T>) => {
@@ -105,7 +124,11 @@ export const createTable = <T extends Record<string, unknown>>(
 
   const log = () => console.log(tableData);
 
-  const addDummy = () => tableData.push(createDummyRecursive(schema));
+  const addDummy = () => {
+    const dummy = createDummyRecursive(schema);
+    tableData.push(dummy);
+    return dummy;
+  };
 
   const update = (conditions: Conditions<T>, updatedValues: Partial<T>) => {
     const indexOfEntryToUpdate = findindexByCondition(conditions);
@@ -123,11 +146,7 @@ export const createTable = <T extends Record<string, unknown>>(
 
   const reset = () => (tableData = []);
 
-  const populate = () => {
-    for (let i = 0; i < 10; i++) {
-      addDummy();
-    }
-  };
+  const populate = (amount = 10) => [...Array(amount)].forEach(addDummy);
 
   const get = (conditions: Conditions<T>) => {
     const entry = tableData[findindexByCondition(conditions)];
@@ -145,6 +164,7 @@ export const createTable = <T extends Record<string, unknown>>(
     update,
     reset,
     populate,
+    getFirst,
   };
 };
 
@@ -156,5 +176,5 @@ export const createDatabase = (
 ) => ({
   reset: () => tables.forEach((table) => table.reset()),
   log: () => tables.forEach((table) => table.log()),
-  populate: () => tables.forEach((table) => table.populate()),
+  populate: (amount = 10) => tables.forEach((table) => table.populate(amount)),
 });

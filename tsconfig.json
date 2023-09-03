@@ -6,7 +6,9 @@
     "module": "ESNext",
     "moduleResolution": "Node",
     "target": "ES5",
-    "esModuleInterop": true
+    "esModuleInterop": true,
+    "declaration": true,
+    "emitDeclarationOnly": false
   },
   "exclude": ["*.test.tsx"]
 }

@@ -1,8 +1,10 @@
 import {
+  autoIncrementId,
   autoIncrementName,
   createDatabase,
   createDummyRecursive,
   createTable,
+  oneOf,
   Schema,
 } from ".";
 
@@ -158,11 +160,15 @@ type ComplexObject = {
   };
   arrayOfSimpleItems: string[];
   arrayOfComplexItems: { complexId: string }[];
+  autoIncrementId: number;
+  autoIncrementIdString: string;
+  customValue: string;
+  arrayCustomValue: string[];
 };
 
 describe("createDummyRecursive", () => {
   it("should create a complex data type successfully", () => {
-    const result = createDummyRecursive<Schema<ComplexObject>>({
+    const result = createDummyRecursive<ComplexObject>({
       id: "id",
       name: "name",
       nested: {
@@ -171,6 +177,10 @@ describe("createDummyRecursive", () => {
       },
       arrayOfSimpleItems: ["string"],
       arrayOfComplexItems: [{ complexId: "id" }],
+      autoIncrementId: "auto-increment-id",
+      autoIncrementIdString: autoIncrementId("string"),
+      customValue: () => "custom value",
+      arrayCustomValue: [() => "custom value"],
     });
 
     expect(
@@ -181,6 +191,10 @@ describe("createDummyRecursive", () => {
           "nested",
           "arrayOfSimpleItems",
           "arrayOfComplexItems",
+          "autoIncrementId",
+          "autoIncrementIdString",
+          "customValue",
+          "arrayCustomValue",
         ].includes(key)
       )
     ).toBeTruthy();
@@ -195,6 +209,8 @@ describe("createDummyRecursive", () => {
     expect(result.arrayOfComplexItems).toHaveLength(1);
 
     expect(result.arrayOfComplexItems[0].complexId).toBeTruthy();
+    expect(result.customValue).toBe("custom value");
+    expect(result.arrayCustomValue[0]).toBe("custom value");
   });
 
   it("should create all data types successfully", () => {
@@ -210,6 +226,7 @@ describe("createDummyRecursive", () => {
       date: "date",
       autoIncrementId: "auto-increment-id",
       autoIncrementName: autoIncrementName("hello"),
+      email: "email",
     });
 
     expect(result.name).toBeTruthy();
@@ -221,8 +238,9 @@ describe("createDummyRecursive", () => {
     expect(result.boolean === true || result.boolean === false).toBeTruthy();
     expect(result.description).toBeTruthy();
     expect(result.date).toBeTruthy();
-    expect(result.autoIncrementId).toBe(1);
+    expect(result.autoIncrementId).toBe(2);
     expect(result.autoIncrementName).toBe("hello 1");
+    expect(result.email).toBeTruthy();
   });
 
   it("should allow custom generator function as well", () => {
@@ -237,5 +255,17 @@ describe("autoIncrementName", () => {
     expect(nameGenerator()).toBe(`hello 1`);
     expect(nameGenerator()).toBe(`hello 2`);
     expect(nameGenerator()).toBe(`hello 3`);
+  });
+});
+
+describe("oneOf", () => {
+  it("should go in a sequence and select one by one", () => {
+    const selectOneOf = oneOf(["Pending", "Failure", "Success"]);
+    expect(selectOneOf()).toBe("Pending");
+    expect(selectOneOf()).toBe("Failure");
+    expect(selectOneOf()).toBe("Success");
+    expect(selectOneOf()).toBe("Pending");
+    expect(selectOneOf()).toBe("Failure");
+    expect(selectOneOf()).toBe("Success");
   });
 });
