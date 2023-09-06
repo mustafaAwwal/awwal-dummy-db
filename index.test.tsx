@@ -170,9 +170,11 @@ type ComplexObject = {
   arrayOfSimpleItems: string[];
   arrayOfComplexItems: { complexId: string }[];
   autoIncrementId: number;
-  autoIncrementIdString: string;
   customValue: string;
   arrayCustomValue: string[];
+  complexCustomValue: {
+    complexNestedValue: string;
+  };
 };
 
 describe("createDummyRecursive", () => {
@@ -187,9 +189,11 @@ describe("createDummyRecursive", () => {
       arrayOfSimpleItems: ["string"],
       arrayOfComplexItems: [{ complexId: "id" }],
       autoIncrementId: autoIncrementId(),
-      autoIncrementIdString: autoIncrementId("string"),
       customValue: () => "custom value",
       arrayCustomValue: [() => "custom value"],
+      complexCustomValue: () => ({
+        complexNestedValue: "complexNestedValue",
+      }),
     });
 
     expect(
@@ -204,9 +208,14 @@ describe("createDummyRecursive", () => {
           "autoIncrementIdString",
           "customValue",
           "arrayCustomValue",
+          "complexCustomValue",
         ].includes(key)
       )
     ).toBeTruthy();
+
+    expect(result.complexCustomValue.complexNestedValue).toBe(
+      "complexNestedValue"
+    );
 
     expect(
       Object.keys(result.nested).every((key) =>

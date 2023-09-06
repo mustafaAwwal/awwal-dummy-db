@@ -23,12 +23,12 @@ export type DummyValueTypes =
 
 export type Schema<T extends Record<string, unknown>> = {
   [property in keyof T]: T[property] extends Record<string, unknown>
-    ? Schema<T[property]> | (() => any)
+    ? Schema<T[property]> | (() => T[property])
     : T[property] extends (infer E)[]
     ? E extends Record<string, unknown>
-      ? [Schema<E> | (() => any)]
-      : [DummyValueTypes | (() => any)]
-    : DummyValueTypes | (() => any);
+      ? [Schema<E> | (() => E)]
+      : [DummyValueTypes | (() => E)]
+    : DummyValueTypes | (() => T[property]);
 };
 
 export type Conditions<T extends Record<string, unknown>> = {
@@ -47,12 +47,11 @@ export const oneOf = <T>(values: T[], startFrom = 0) => {
   return () => values[localStartFrom++ % values.length];
 };
 
-export const autoIncrementId = (
-  type: "number" | "string" = "number",
-  start = 1
-) => {
+export const autoIncrementId = (start = 1) => {
   let localStart = start;
-  return () => (type === "number" ? localStart++ : `${localStart++}`);
+  return () => {
+    return localStart++;
+  };
 };
 
 export const createValue: Record<DummyValueTypes, () => any> = {
@@ -117,7 +116,8 @@ export const createTable = <T extends Record<string, unknown>>(
 
   const remove = (conditions: Conditions<T>) => {
     const entryToDelete = findindexByCondition(conditions);
-    if (entryToDelete !== -1) tableData.splice(entryToDelete, 1);
+    if (entryToDelete === -1) throw new Error("Entry not found");
+    tableData.splice(entryToDelete, 1);
   };
 
   const log = () => console.log(tableData);
