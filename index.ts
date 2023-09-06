@@ -19,8 +19,7 @@ export type DummyValueTypes =
   | "country"
   | "age"
   | "description"
-  | "email"
-  | "auto-increment-id";
+  | "email";
 
 export type Schema<T extends Record<string, unknown>> = {
   [property in keyof T]: T[property] extends Record<string, unknown>
@@ -76,7 +75,6 @@ export const createValue: Record<DummyValueTypes, () => any> = {
       dictionaries: [names, ["@"], ["google.com"]],
       separator: "",
     }),
-  "auto-increment-id": autoIncrementId(),
 };
 
 export const createDummyRecursive = <J extends Record<string, unknown>>(
@@ -124,10 +122,11 @@ export const createTable = <T extends Record<string, unknown>>(
 
   const log = () => console.log(tableData);
 
-  const addDummy = () => {
+  const addDummy = (transform: (param: T) => T = (param) => param) => {
     const dummy = createDummyRecursive(schema);
-    tableData.push(dummy);
-    return dummy;
+    const transformedDummy = transform(dummy);
+    tableData.push(transformedDummy);
+    return transformedDummy;
   };
 
   const update = (conditions: Conditions<T>, updatedValues: Partial<T>) => {

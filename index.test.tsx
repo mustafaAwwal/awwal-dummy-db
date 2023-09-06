@@ -78,6 +78,15 @@ describe("Table", () => {
     expect(table.getAll()).toHaveLength(1);
   });
 
+  it("should add a transformed dummy", () => {
+    const table = tableSetup();
+    const user = table.addDummy((user) => ({
+      ...user,
+      name: "transformed name",
+    }));
+    expect(user.name).toBe("transformed name");
+  });
+
   it("should add data", () => {
     const table = tableSetup();
     table.add({
@@ -177,7 +186,7 @@ describe("createDummyRecursive", () => {
       },
       arrayOfSimpleItems: ["string"],
       arrayOfComplexItems: [{ complexId: "id" }],
-      autoIncrementId: "auto-increment-id",
+      autoIncrementId: autoIncrementId(),
       autoIncrementIdString: autoIncrementId("string"),
       customValue: () => "custom value",
       arrayCustomValue: [() => "custom value"],
@@ -224,7 +233,7 @@ describe("createDummyRecursive", () => {
       boolean: "boolean",
       description: "description",
       date: "date",
-      autoIncrementId: "auto-increment-id",
+      autoIncrementId: autoIncrementId(),
       autoIncrementName: autoIncrementName("hello"),
       email: "email",
     });
@@ -238,7 +247,7 @@ describe("createDummyRecursive", () => {
     expect(result.boolean === true || result.boolean === false).toBeTruthy();
     expect(result.description).toBeTruthy();
     expect(result.date).toBeTruthy();
-    expect(result.autoIncrementId).toBe(2);
+    expect(result.autoIncrementId).toBe(1);
     expect(result.autoIncrementName).toBe("hello 1");
     expect(result.email).toBeTruthy();
   });
