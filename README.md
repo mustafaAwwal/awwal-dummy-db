@@ -20,7 +20,7 @@ npm install --save-dev @awwal/dummy-db
 yarn install --dev @awwal/dummy-db
 ```
 
-## Usage
+## Getting Started
 
 ### Creating a table
 
@@ -163,6 +163,7 @@ import {
   createTable,
   autoIncrementId,
   autoIncrementName,
+  oneOf,
 } from "@awwal/dummy-db";
 
 createTable({
@@ -172,6 +173,8 @@ createTable({
   autoIncrementName: autoIncrementName("model"),
   // Generates auto increment id with string type '1','2','3','4'.....
   autoIncrementId: autoIncrementId("string"),
+  // Selects one of the given array. Goes in a loop so you have object of every type in your dummy data
+  oneOf: oneOf(["positive", "negative"]),
 });
 ```
 
@@ -258,3 +261,135 @@ const UserSchema: Schema<User> = {
 // All of the table methods will have updated types
 const userTable = createTable(UserSchema);
 ```
+
+## API
+
+### createTable
+
+```javascript
+const {
+getAll
+get
+add
+remove
+log
+addDummy
+update
+reset
+populate
+getFirst
+} = createTable(schema);
+```
+
+**Params**
+
+`schema:Schema<T>`
+
+- `T` is the type of the data to be generated.
+- This is a required field.
+- The schema to generate dummy data.
+
+**Returns**
+
+- `getAll: () => T[]`
+  - Returns the data of the table.
+- `get: (conditions: Conditions<T>) => T`
+  - `conditions` are to query the item but it accepts only first level keys of an object. You can't query nested fields or array fields.
+  - Returns the Item based on conditions.
+  - Throws an error if the item is not found.
+- `add: (item:T)=>T`
+  - Add items to the table.
+- `remove: (conditions:Conditions<T>)=>void`
+  - Remove item from the table based on conditions.
+  - THrows an error if the item to remove is not found.
+- `log: () => void`
+  - Logs the table information.
+- `addDummy: (transformationFunction?:(dummy:T)=>T) => T`
+  - `transformationFunction` helps you transform the dummy data with fields of your own choice. This is optional. Use this if you want to have rest of the fields generated and just one specific field with a specific value of your choice.
+  - Returns generated dummy data.
+- `update: (conditions:Conditions<T>, updatedValues: Partial<T>) => T`
+  - Accepts conditions to query and the new values to add to that object.
+  - throws an error if the entry is not found.
+- `reset: () => void`
+  - Resets the table data
+- `populate: (amount?: number) => void`
+  - `amount` of data to be added. (defaults to 10)
+  - Populates the table with dummy data.
+- `getFirst: () => T`
+  - get first element of the table
+
+### createDatabase
+
+```javascript
+const { reset, log, populate } = createDatabase(...tables);
+```
+
+**Params**
+
+- `...tables:ReturnType<typeof createTable>[]`
+  - Accepts the generated tables as input arguments.
+
+**Returns**
+
+- `reset: () => void`
+  - Resets all of the tables
+- `log: () => void`
+  - Logs all of the table data
+- `populate: () => void`
+  - Populates all of the tables.
+
+### autoIncrementId
+
+```javascript
+const autoIncrementIdGenerator = autoIncrementId();
+
+// How to use in schema
+const schema: Schema<T> = {
+  // Will have values 1,2,3,4.....
+  id: autoIncrementId();
+};
+```
+
+**Returns**
+
+- A function to be used in the schema to generate auto increment id.
+
+### autoIncrementName
+
+```javascript
+const autoIncrementNameGenerator = autoIncrementName(name);
+
+// How to use in schema
+const schema: Schema<T> = {
+  // will have model 1, model 2, model 3 and so on as dummy values generated
+  name: autoIncrementName(name);
+};
+```
+
+**Params**
+
+- `name`. The name to be incrementally generated.
+
+**Returns**
+
+- A function to be used in the schema to generate auto increment names.
+
+### oneOf
+
+```javascript
+const oneOfGenerator = oneOf(options);
+
+// How to use in schema
+const schema: Schema<T> = {
+  // will have model 1, model 2, model 3 and so on as dummy values generated
+  option: oneOfGenerator(options);
+};
+```
+
+**Params**
+
+- `options`. An array of strings to be selected from.
+
+**Returns**
+
+- A function to be used in the schema to generate option based on given options

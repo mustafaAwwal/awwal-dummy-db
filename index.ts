@@ -34,6 +34,8 @@ export type Schema<T extends Record<string, unknown>> = {
 export type Conditions<T extends Record<string, unknown>> = {
   [property in keyof T]?: T[property] extends Record<string, unknown>
     ? never
+    : T[property] extends unknown[]
+    ? never
     : T[property];
 };
 
@@ -112,7 +114,10 @@ export const createTable = <T extends Record<string, unknown>>(
 
   const getFirst = () => tableData[0];
 
-  const add = (entry: T) => tableData.push(entry);
+  const add = (entry: T) => {
+    tableData.push(entry);
+    return entry;
+  };
 
   const remove = (conditions: Conditions<T>) => {
     const entryToDelete = findindexByCondition(conditions);
